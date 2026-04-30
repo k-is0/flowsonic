@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flowsonic — Design Canvas</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background: #E8E4DC; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="device.jsx"></script>
+  <script type="text/babel" src="hero-variants.jsx"></script>
+
+  <script type="text/babel">
+    const { DesignCanvas, DCSection, DCArtboard } = window;
+
+    const Frame = ({ src }) => (
+      <iframe
+        src={src}
+        style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+        title={src}
+      />
+    );
+
+    const App = () => (
+      <DesignCanvas title="Flowsonic — Redesign Explorations" subtitle="Two complete styles · plus hero variants">
+        <DCSection id="styles" title="Full-page styles">
+          <DCArtboard id="dyson" label="Apple / Dyson — premium clinical" width={1440} height={900}>
+            <Frame src="Flowsonic Dyson.html"/>
+          </DCArtboard>
+          <DCArtboard id="editorial" label="Editorial industrial — serif + dark" width={1440} height={900}>
+            <Frame src="Flowsonic.html"/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="heroes" title="Hero variants">
+          <DCArtboard id="hero-a" label="A — Centered editorial" width={1440} height={900}>
+            <HeroCentered />
+          </DCArtboard>
+          <DCArtboard id="hero-b" label="B — Split blueprint" width={1440} height={900}>
+            <HeroSplit />
+          </DCArtboard>
+          <DCArtboard id="hero-c" label="C — Light inverted" width={1440} height={900}>
+            <HeroLight />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
