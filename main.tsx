@@ -1,6 +1,19 @@
-// @ts-nocheck
-interface RevealProps { children: any; className?: string; delay?: number; }
-interface CounterProps { to: number; decimals?: number; }
+interface RevealProps {
+  children: any;
+  className?: string;
+  delay?: number;
+}
+
+// Brand mark — uses the actual logo PNG (transparent navy / transparent white versions).
+const LogoMark = ({ size = 32, white = false }: { size?: number; white?: boolean }) => (
+  <img
+    src={white ? "assets/logo-icon-white.png" : "assets/logo-icon.png"}
+    alt="Flowsonic"
+    width={size}
+    height={size}
+    style={{ display: "block", objectFit: "contain" }}
+  />
+);
 
 const Reveal = ({ children, className = "", delay = 0 }: RevealProps) => {
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -11,557 +24,594 @@ const Reveal = ({ children, className = "", delay = 0 }: RevealProps) => {
         setTimeout(() => ref.current && ref.current.classList.add("in"), delay);
         obs.disconnect();
       }
-    }, { threshold: 0.06 });
+    }, { threshold: 0.15 });
     obs.observe(ref.current);
     return () => obs.disconnect();
   }, [delay]);
   return <div ref={ref} className={`rv ${className}`}>{children}</div>;
 };
 
+interface CounterProps {
+  to: number;
+  decimals?: number;
+}
+
 const Counter = ({ to, decimals = 0 }: CounterProps) => {
   const [val, setVal] = React.useState<number>(0);
   const ref = React.useRef<HTMLSpanElement | null>(null);
-  const fired = React.useRef<boolean>(false);
+  const triggered = React.useRef<boolean>(false);
   React.useEffect(() => {
     if (!ref.current) return;
     const obs = new IntersectionObserver(([e]: IntersectionObserverEntry[]) => {
-      if (e.isIntersecting && !fired.current) {
-        fired.current = true;
-        const t0 = performance.now();
+      if (e.isIntersecting && !triggered.current) {
+        triggered.current = true;
+        const start = performance.now();
         const tick = (now: number) => {
-          const t = Math.min(1, (now - t0) / 2200);
-          setVal(to * (1 - Math.pow(1 - t, 4)));
+          const t = Math.min(1, (now - start) / 1800);
+          const eased = 1 - Math.pow(1 - t, 3);
+          setVal(to * eased);
           if (t < 1) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
       }
-    }, { threshold: 0.5 });
+    }, { threshold: 0.4 });
     obs.observe(ref.current);
     return () => obs.disconnect();
   }, [to]);
   return <span ref={ref}>{decimals > 0 ? val.toFixed(decimals) : Math.round(val)}</span>;
 };
 
-const Word = ({ w, delay }: { w: string; delay: number }) => (
-  <span className="hw" style={{ animationDelay: `${delay}s` }}
-    dangerouslySetInnerHTML={{ __html: w }} />
+// Animated headline — splits into words, each rises with stagger
+const AnimatedHeadline = ({ text }: { text: string }) => {
+  const words = text.split(" ");
+  return (
+    <>
+      {words.map((w, i) => (
+        <React.Fragment key={i}>
+          <span className="word" style={{ animationDelay: `${0.15 + i * 0.08}s` }}
+            dangerouslySetInnerHTML={{ __html: w }}/>
+          {i < words.length - 1 ? " " : ""}
+        </React.Fragment>
+      ))}
+    </>
+  );
+};
+
+// Hero device — premium product render with brand navy
+const HeroDevice = () => (
+  <svg viewBox="0 0 1400 700" style={{width:"100%",height:"auto",display:"block"}}>
+    <defs>
+      <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#E8EEF8"/>
+        <stop offset="0.45" stopColor="#FFFFFF"/>
+        <stop offset="0.55" stopColor="#FFFFFF"/>
+        <stop offset="1" stopColor="#A0AAC0"/>
+      </linearGradient>
+      <linearGradient id="capGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#2E54A0"/>
+        <stop offset="0.5" stopColor="#1E3A6B"/>
+        <stop offset="1" stopColor="#0A1628"/>
+      </linearGradient>
+      <linearGradient id="ringGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#5A7FC8"/>
+        <stop offset="1" stopColor="#1E3A6B"/>
+      </linearGradient>
+      <radialGradient id="shadowGrad" cx="0.5" cy="0.5">
+        <stop offset="0" stopColor="rgba(0,0,0,0.5)"/>
+        <stop offset="1" stopColor="rgba(0,0,0,0)"/>
+      </radialGradient>
+    </defs>
+
+    <ellipse cx="700" cy="640" rx="500" ry="28" fill="url(#shadowGrad)"/>
+
+    {/* End cap left */}
+    <ellipse cx="240" cy="380" rx="38" ry="170" fill="url(#capGrad)"/>
+    <ellipse cx="240" cy="380" rx="20" ry="100" fill="rgba(90,127,200,0.3)"/>
+
+    {/* Main body */}
+    <rect x="240" y="210" width="920" height="340" rx="28" fill="url(#bodyGrad)" stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
+    <rect x="240" y="210" width="920" height="60" rx="28" fill="rgba(255,255,255,0.4)"/>
+
+    {/* Side seams */}
+    <rect x="240" y="210" width="14" height="340" fill="rgba(0,0,0,0.04)"/>
+    <rect x="1146" y="210" width="14" height="340" fill="rgba(0,0,0,0.04)"/>
+
+    {/* Top transducer strip */}
+    <rect x="320" y="190" width="760" height="30" rx="4" fill="#1E3A6B"/>
+    {[420, 550, 680, 810, 940].map(x => (
+      <g key={x}>
+        <rect x={x-22} y="195" width="44" height="20" rx="2" fill="url(#ringGrad)" opacity="0.85"/>
+        <circle cx={x} cy="205" r="3" fill="#5A7FC8">
+          <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" begin={`${(x-420)/200}s`}/>
+        </circle>
+      </g>
+    ))}
+
+    {/* Display panel */}
+    <rect x="800" y="280" width="280" height="80" rx="10" fill="#0A1628"/>
+    <rect x="810" y="290" width="260" height="60" rx="6" fill="#050B17" stroke="rgba(90,127,200,0.3)" strokeWidth="1"/>
+    <text x="820" y="310" fontFamily="ui-monospace, monospace" fontSize="11" fill="#5A7FC8" letterSpacing="1">FLW-01 / ACTIVE</text>
+    <text x="820" y="328" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.6)" letterSpacing="1">1.6 MHz · 120 m³/h</text>
+    <text x="820" y="345" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1">CAPTURE 92%</text>
+
+    {/* Brand mark + name */}
+    <text x="320" y="460" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="700" fill="#1E3A6B" letterSpacing="2">FLOWSONIC</text>
+    <text x="320" y="478" fontFamily="Inter, sans-serif" fontSize="9" fill="#7A8499" letterSpacing="2.5">THE MAGNET FOR MICROPLASTICS · MK.02</text>
+
+    {/* End cap right */}
+    <ellipse cx="1160" cy="380" rx="38" ry="170" fill="url(#capGrad)"/>
+    <ellipse cx="1160" cy="380" rx="20" ry="100" fill="rgba(90,127,200,0.3)"/>
+
+    {/* Inlet pipe */}
+    <rect x="40" y="350" width="200" height="60" rx="6" fill="#7A8499"/>
+    <rect x="40" y="350" width="200" height="14" fill="rgba(255,255,255,0.2)"/>
+    <rect x="220" y="335" width="22" height="90" fill="#3A4760"/>
+
+    {/* Outlet pipe */}
+    <rect x="1160" y="350" width="200" height="60" rx="6" fill="#7A8499"/>
+    <rect x="1160" y="350" width="200" height="14" fill="rgba(255,255,255,0.2)"/>
+    <rect x="1158" y="335" width="22" height="90" fill="#3A4760"/>
+
+    {/* Particle stream */}
+    {Array.from({length: 10}, (_, i) => (
+      <circle key={i} r="2.5" cy={380 + (i%3 - 1) * 30} fill="#5A7FC8">
+        <animate attributeName="cx" from="60" to="1340"
+          dur={`${3 + (i % 3) * 0.5}s`}
+          begin={`${i * 0.35}s`}
+          repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0"
+          dur={`${3 + (i % 3) * 0.5}s`}
+          begin={`${i * 0.35}s`}
+          repeatCount="indefinite"/>
+      </circle>
+    ))}
+
+    {/* Collection probe */}
+    <rect x="660" y="550" width="80" height="70" rx="4" fill="#3A4760"/>
+    <rect x="675" y="620" width="50" height="20" rx="2" fill="#1E3A6B"/>
+  </svg>
 );
 
+// Tech viz — particles converging into focus nodes
 const TechViz = () => {
-  const pts = React.useMemo(() =>
-    Array.from({ length: 90 }, (_, i) => ({
-      id: i, d: (i * 0.13) % 5.5,
-      y: ((i * 47) % 200) - 100,
-      r: 1.4 + ((i * 7) % 4) / 2.5,
-      s: 5 + (i % 4) * 0.7,
-      hi: i % 7 === 0,
-    })), []);
+  const particles = React.useMemo(() =>
+    Array.from({length: 80}, (_, i) => ({
+      id: i,
+      delay: (i * 0.12) % 5,
+      yStart: ((i * 41) % 200) - 100,
+      size: 1.5 + ((i * 7) % 4) / 2,
+      speed: 5 + (i % 3),
+    })), []
+  );
 
   return (
-    <div className="viz-frame">
-      <svg viewBox="0 0 1400 440" preserveAspectRatio="none"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="g" width="64" height="64" patternUnits="userSpaceOnUse">
-            <path d="M 64 0 L 0 0 0 64" fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="1"/>
-          </pattern>
-        </defs>
-        <rect width="1400" height="440" fill="url(#g)"/>
-        <rect x="0" y="110" width="1400" height="220" fill="rgba(255,255,255,0.012)" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-        <line x1="0" y1="220" x2="1400" y2="220" stroke="rgba(255,255,255,0.04)" strokeDasharray="5 9"/>
+    <div className="tech-viz-frame">
+      <svg viewBox="0 0 1400 500" preserveAspectRatio="none" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
+        <rect x="0" y="130" width="1400" height="240" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+        <line x1="0" y1="250" x2="1400" y2="250" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 8"/>
 
-        {[350,525,700,875,1050].map((x,i) => (
+        {[400, 600, 800, 1000].map(x => (
           <g key={x}>
-            <rect x={x-32} y="46" width="64" height="66" fill="rgba(20,45,95,0.3)" stroke="rgba(80,120,190,0.45)" strokeWidth="1" rx="3"/>
-            {[54,68,82].map((y,j) => <rect key={j} x={x-24} y={y} width="48" height="9" rx="2" fill={`rgba(80,120,190,${0.4-j*0.1})`}/>)}
-            <rect x={x-32} y="328" width="64" height="66" fill="rgba(20,45,95,0.3)" stroke="rgba(80,120,190,0.45)" strokeWidth="1" rx="3"/>
-            {[336,350,364].map((y,j) => <rect key={j} x={x-24} y={y} width="48" height="9" rx="2" fill={`rgba(80,120,190,${0.2+j*0.1})`}/>)}
-            <line x1={x} y1="112" x2={x} y2="328" stroke="rgba(80,120,190,0.15)" strokeWidth="1"/>
+            <rect x={x-32} y="70" width="64" height="60" fill="rgba(46,84,160,0.1)" stroke="rgba(90,127,200,0.45)" strokeWidth="1" rx="4"/>
+            <rect x={x-32} y="370" width="64" height="60" fill="rgba(46,84,160,0.1)" stroke="rgba(90,127,200,0.45)" strokeWidth="1" rx="4"/>
+            <line x1={x} y1="130" x2={x} y2="370" stroke="#5A7FC8" strokeWidth="0.8" opacity="0.3"/>
+            <text x={x} y="60" textAnchor="middle" fontFamily="ui-monospace, monospace" fontSize="9" fill="rgba(90,127,200,0.7)" letterSpacing="1">T{(x-200)/200}</text>
           </g>
         ))}
 
-        {[0,1,2].map(i => (
-          <path key={i} strokeWidth={1.6-i*0.3} stroke="#4A70B8" fill="none" opacity={0.55-i*0.13}
-            d={`M 180 220 Q 265 ${194+i*5},350 220 T 525 220 T 700 220 T 875 220 T 1050 220 T 1220 220`}>
-            <animate attributeName="d"
-              values={`M 180 220 Q 265 ${194+i*5},350 220 T 525 220 T 700 220 T 875 220 T 1050 220 T 1220 220;
-                      M 180 220 Q 265 ${246-i*5},350 220 T 525 220 T 700 220 T 875 220 T 1050 220 T 1220 220;
-                      M 180 220 Q 265 ${194+i*5},350 220 T 525 220 T 700 220 T 875 220 T 1050 220 T 1220 220`}
-              dur={`${3+i*0.4}s`} repeatCount="indefinite"/>
-          </path>
-        ))}
+        <g stroke="#5A7FC8" fill="none" opacity="0.55">
+          {[0,1,2].map(i => (
+            <path key={i} strokeWidth={1.4 - i*0.3} opacity={0.7 - i*0.18}
+              d={`M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5}`}>
+              <animate attributeName="d"
+                values={`M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5};
+                        M 350 ${250+i*5} Q 400 ${280+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5};
+                        M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5}`}
+                dur="3.5s" repeatCount="indefinite"/>
+            </path>
+          ))}
+        </g>
 
-        {pts.map((p: any) => (
-          <circle key={p.id} r={p.r} fill={p.hi ? "#6A90D0" : "rgba(255,255,255,0.85)"}>
-            <animate attributeName="cx" from={-10} to={1410} dur={`${p.s}s`} begin={`${p.d}s`} repeatCount="indefinite"/>
+        {particles.map((p: any) => (
+          <circle key={p.id} r={p.size} fill="rgba(255,255,255,0.85)">
+            <animate attributeName="cx" from={-20} to={1420} dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite"/>
             <animate attributeName="cy"
-              values={`${220+p.y};${220+p.y*.85};${220+p.y*.28};220;220;${220+p.y*.28};${220+p.y*.85};${220+p.y}`}
-              keyTimes="0;.14;.3;.45;.6;.75;.88;1"
-              dur={`${p.s}s`} begin={`${p.d}s`} repeatCount="indefinite"/>
+              values={`${250 + p.yStart}; ${250 + p.yStart * 0.95}; ${250 + p.yStart * 0.4}; ${250}; ${250}; ${250 + p.yStart * 0.4}; ${250 + p.yStart * 0.95}; ${250 + p.yStart}`}
+              keyTimes="0; 0.18; 0.32; 0.45; 0.6; 0.74; 0.88; 1"
+              dur={`${p.speed}s`}
+              begin={`${p.delay}s`}
+              repeatCount="indefinite"/>
             <animate attributeName="fill"
-              values={`${p.hi?"#6A90D0":"rgba(255,255,255,0.85)"};#6A90D0;#4A70B8;#4A70B8;${p.hi?"#6A90D0":"rgba(255,255,255,0.85)"}`}
-              keyTimes="0;.3;.44;.64;1"
-              dur={`${p.s}s`} begin={`${p.d}s`} repeatCount="indefinite"/>
+              values="rgba(255,255,255,0.85); rgba(255,255,255,0.85); #5A7FC8; #5A7FC8; #5A7FC8; rgba(255,255,255,0.85)"
+              keyTimes="0; 0.32; 0.45; 0.6; 0.74; 1"
+              dur={`${p.speed}s`}
+              begin={`${p.delay}s`}
+              repeatCount="indefinite"/>
           </circle>
         ))}
 
-        <text x="24" y="24" fontFamily="ui-monospace,monospace" fontSize="10" fill="rgba(255,255,255,0.4)" letterSpacing="2.5">FLOW →</text>
-        <text x="1270" y="24" fontFamily="ui-monospace,monospace" fontSize="10" fill="rgba(80,120,190,0.75)" letterSpacing="2.5">FOCUSED</text>
-        <text x="24" y="426" fontFamily="ui-monospace,monospace" fontSize="9.5" fill="rgba(255,255,255,0.3)" letterSpacing="1.6">FIG. 02 · ULTRASONIC ACOUSTIC FOCUSING — 1.6 MHZ</text>
+        <text x="40" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FLOW →</text>
+        <text x="1280" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1.4">FOCUSED</text>
+        <text x="40" y="480" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FIG. 02 · ULTRASONIC FOCUSING — 1.6 MHZ</text>
       </svg>
     </div>
   );
 };
 
-const TEAM = [
-  { img: "Pictures%20%26%20Videos/1.jpg", name: "Emil Huseynli",   role: "Petroleum Engineer",        tag: "Founder" },
-  { img: "Pictures%20%26%20Videos/2.jpg", name: "Rita Khoury",     role: "Environmental & Chemical Engineer", tag: "Engineering" },
-  { img: "Pictures%20%26%20Videos/3.jpg", name: "Yihang Zhang",    role: "Architect",                 tag: "Design" },
-  { img: "Pictures%20%26%20Videos/4.jpg", name: "Kevin Huang",     role: "Design Engineer",           tag: "Engineering" },
-];
+// Problem icons
+const IconScreen = () => (
+  <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="1.5" className="problem-img-icon">
+    <rect x="10" y="10" width="60" height="60" rx="4"/>
+    <line x1="10" y1="22" x2="70" y2="22"/>
+    <line x1="10" y1="34" x2="70" y2="34"/>
+    <line x1="10" y1="46" x2="70" y2="46"/>
+    <line x1="10" y1="58" x2="70" y2="58"/>
+    <line x1="22" y1="10" x2="22" y2="70"/>
+    <line x1="34" y1="10" x2="34" y2="70"/>
+    <line x1="46" y1="10" x2="46" y2="70"/>
+    <line x1="58" y1="10" x2="58" y2="70"/>
+    <circle cx="28" cy="28" r="2" fill="currentColor"/>
+    <circle cx="52" cy="40" r="2.5" fill="currentColor"/>
+    <circle cx="40" cy="52" r="1.5" fill="currentColor"/>
+    <circle cx="64" cy="64" r="2" fill="currentColor"/>
+  </svg>
+);
+const IconLoop = () => (
+  <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="1.5" className="problem-img-icon">
+    <path d="M 20 40 Q 20 20, 40 20 Q 60 20, 60 40 Q 60 60, 40 60 Q 20 60, 20 40 Z"/>
+    <path d="M 56 28 L 60 20 L 52 24" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="32" cy="35" r="2" fill="currentColor"/>
+    <circle cx="48" cy="44" r="1.5" fill="currentColor"/>
+    <circle cx="38" cy="50" r="1.8" fill="currentColor"/>
+    <circle cx="44" cy="30" r="1" fill="currentColor"/>
+  </svg>
+);
+const IconClog = () => (
+  <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="1.5" className="problem-img-icon">
+    <rect x="14" y="30" width="52" height="20" rx="2"/>
+    <line x1="14" y1="40" x2="66" y2="40"/>
+    <circle cx="22" cy="35" r="2.5" fill="currentColor"/>
+    <circle cx="32" cy="42" r="3" fill="currentColor"/>
+    <circle cx="42" cy="38" r="2" fill="currentColor"/>
+    <circle cx="50" cy="44" r="2.5" fill="currentColor"/>
+    <circle cx="58" cy="36" r="2" fill="currentColor"/>
+    <path d="M 8 38 L 14 40 L 8 42" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M 66 40 L 72 40" strokeLinecap="round"/>
+  </svg>
+);
 
-const SPECS = [
-  { k: "Target band",    v: "1–5",     u: "mm",   d: "Particle size range optimized for ultrasonic focusing." },
-  { k: "Throughput",     v: "120",     u: "m³/h", d: "Continuous flow capacity per single unit." },
-  { k: "Frequency",      v: "1.6",     u: "MHz",  d: "Tuned for ideal node spacing in water medium." },
-  { k: "Pressure drop",  v: "<0.4",    u: "bar",  d: "Minimal hydraulic load on upstream systems." },
-  { k: "Footprint",      v: "1.4×0.8", u: "m",    d: "Skid-mounted, integrates into existing loops." },
-  { k: "Power draw",     v: "2.1",     u: "kW",   d: "Energy-efficient vs. membrane alternatives." },
+const TEAM = [
+  { img: "assets/team-1.jpg", name: "Emil Huseynli", role: "Petroleum Engineer · Founder, Former CEO Agroficient", tag: "FOUNDER" },
+  { img: "assets/team-2.jpg", name: "Rita Khoury", role: "Environmental & Chemical Engineer", tag: "ENGINEERING" },
+  { img: "assets/team-4.jpg", name: "Kevin Huang", role: "Design Engineer", tag: "ENGINEERING" },
+  { img: "assets/team-3.jpg", name: "Yihang Zhang", role: "Architect", tag: "DESIGN" },
 ];
 
 const App = () => {
   const [scrolled, setScrolled] = React.useState<boolean>(false);
   const [section, setSection] = React.useState<string>("hero");
-  const [done, setDone] = React.useState<boolean>(false);
+  const [submitted, setSubmitted] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   React.useEffect(() => {
-    const ids = ["hero","problem","tech","specs","team","contact"];
+    const ids = ["hero", "challenge", "tech", "feat-1", "feat-2", "specs", "team", "cta"];
     const obs = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
-      entries.forEach(e => { if (e.isIntersecting) setSection((e.target as HTMLElement).id); });
+      entries.forEach(e => {
+        if (e.isIntersecting) setSection((e.target as HTMLElement).id);
+      });
     }, { rootMargin: "-50% 0px -45% 0px" });
-    ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el);
+    });
     return () => obs.disconnect();
   }, []);
 
-  const darkSections = ["hero","tech","contact"];
+  const darkSections = ["hero", "tech", "feat-2", "specs", "cta"];
   const onDark = darkSections.includes(section);
-
-  const words1 = ["The", "magnet"];
-  const words2 = ["for"];
-  const words3 = ["microplastics."];
 
   return (
     <>
-      {/* ─── NAV ─── */}
-      <nav className={`nav${scrolled?" scrolled":""}${onDark?" dark":""}`}>
-        <a href="#hero" className="nav-brand">
-          <img
-            src="Pictures%20%26%20Videos/Spring%20Term%20Logo.png"
-            alt="Flowsonic"
-            className="nav-logo-img"
-          />
-        </a>
-        <ul className="nav-links">
-          <li><a href="#problem">Challenge</a></li>
-          <li><a href="#tech">Technology</a></li>
-          <li><a href="#specs">Specs</a></li>
-          <li><a href="#team">Team</a></li>
-        </ul>
-        <a href="#contact" className="nav-cta">Get in touch</a>
+      <nav className={`nav ${scrolled ? "scrolled" : ""} ${onDark ? "dark" : ""}`}>
+        <div className="nav-inner">
+          <a href="#hero" className="nav-logo">
+            <span className="nav-logo-mark"><LogoMark size={30} white={onDark}/></span>
+            <span className="nav-logo-text">Flowsonic</span>
+          </a>
+          <ul className="nav-links">
+            <li><a href="#challenge">Challenge</a></li>
+            <li><a href="#tech">Technology</a></li>
+            <li><a href="#feat-1">Benefits</a></li>
+            <li><a href="#specs">Specs</a></li>
+            <li><a href="#team">Team</a></li>
+          </ul>
+          <a href="#cta" className="nav-cta">Request a call →</a>
+        </div>
       </nav>
 
-      {/* ─── HERO ─── */}
-      <section id="hero" className="hero">
-        <div className="hero-inner">
-          <p className="hero-eyebrow">FLW-01 · Mk. 02 · 2026</p>
-          <h1 className="hero-h1">
-            <span className="hero-line">
-              {words1.map((w, i) => <Word key={i} w={w} delay={0.2 + i * 0.1}/>)}{" "}
-              {words2.map((w, i) => <Word key={i} w={w} delay={0.4}/>)}
-            </span>
-            <span className="hero-line italic">
-              {words3.map((w, i) => <Word key={i} w={w} delay={0.55}/>)}
-            </span>
+      <section id="hero" className="hero dark-section">
+        <div className="hero-grid"></div>
+        <div className="hero-content">
+          <div className="hero-cap">Introducing FLW-01 · Mk. 02</div>
+          <h1 className="hero-headline">
+            <AnimatedHeadline text="The magnet for"/><br/>
+            <em><AnimatedHeadline text="microplastics."/></em>
           </h1>
           <p className="hero-sub">
-            An ultrasonic interception system engineered for the 1–5&nbsp;mm microplastics today's industrial water filters let through.
+            An ultrasonic interception system, engineered for the 1–5&nbsp;mm microplastics today's industrial water filters let through.
           </p>
-          <div className="hero-actions">
-            <a href="#contact" className="btn-solid">Request a call →</a>
-            <a href="#tech" className="btn-outline">How it works</a>
+          <div className="hero-ctas">
+            <a href="#cta" className="btn btn-primary">Request a call <span className="arr">→</span></a>
+            <a href="#tech" className="btn btn-ghost">Watch how it works</a>
           </div>
         </div>
-        <div className="hero-rule"/>
-        <div className="hero-device-wrap">
-          <HeroDevice/>
+
+        <div className="hero-stage">
+          <div className="hero-spotlight"></div>
+          <div className="hero-product">
+            <HeroDevice/>
+          </div>
         </div>
-        <div className="scroll-hint">Scroll</div>
+        <div className="scroll-cue">Scroll</div>
       </section>
 
-      {/* ─── METRICS ─── */}
-      <section className="metrics">
-        <div className="container">
-          <div className="metrics-row">
-            {[
-              { to:92,  dec:0, unit:"%",   label:"Capture in target band" },
-              { to:50,  dec:0, unit:"%",   label:"Maintenance reduction", prefix:"−" },
-              { to:120, dec:0, unit:"m³/h",label:"Continuous throughput" },
-              { to:1.6, dec:1, unit:"MHz", label:"Operating frequency" },
-            ].map((m, i) => (
-              <Reveal key={i} className="metric" delay={i*80}>
-                <div className="metric-val">
-                  {m.prefix && m.prefix}
-                  <Counter to={m.to} decimals={m.dec}/><span className="metric-unit">{m.unit}</span>
-                </div>
-                <div className="metric-label">{m.label}</div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── CHALLENGE ─── */}
-      <section id="problem" className="section">
-        <div className="container">
-          <div className="section-intro">
-            <Reveal>
-              <span className="label">01 — The Challenge</span>
-              <h2 className="display">The threat is already<br/><em>in your water.</em></h2>
-              <p className="intro-body">
-                Particles in the 1–5&nbsp;mm range are too small to screen, too large to settle, and too persistent to ignore. They migrate through pipework, degrade reuse loops, and quietly build into an operational headache.
-              </p>
+      <section className="stats">
+        <div className="fc">
+          <div className="stats-grid">
+            <Reveal className="stat">
+              <div className="stat-num"><Counter to={92}/><span className="unit">%</span></div>
+              <div className="stat-label">Capture in target band</div>
             </Reveal>
-          </div>
-
-          <div className="problem-list">
-            {[
-              { n:"01", h:"Slipping through filters",    p:"Conventional screens and WWTPs struggle in the 1–5 mm range, leaving operators with persistent discharge risk and compliance exposure." },
-              { n:"02", h:"Unreliable reuse quality",    p:"Microplastics degrade recycled water loops over time, undermining process stability and audit-readiness in closed systems." },
-              { n:"03", h:"Clogging and downtime",       p:"Fine meshes block fast under real-world loads — driving maintenance cycles, labor costs, and unplanned interruptions." },
-            ].map((p, i) => (
-              <Reveal key={i} className="problem-item" delay={i*80}>
-                <span className="problem-n">{p.n}</span>
-                <div className="problem-body">
-                  <h3>{p.h}</h3>
-                  <p>{p.p}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── TECHNOLOGY ─── */}
-      <section id="tech" className="section dark">
-        <div className="container">
-          <div className="section-intro">
-            <Reveal>
-              <span className="label">02 — The Technology</span>
-              <h2 className="display">Standing waves.<br/><em>No moving parts.</em></h2>
-              <p className="intro-body">
-                Piezo arrays generate a precise pressure field at 1.6&nbsp;MHz. Acoustic radiation force pushes microplastics into focus nodes — concentrating them while bulk flow passes clean.
-              </p>
+            <Reveal className="stat" delay={100}>
+              <div className="stat-num">−<Counter to={50}/><span className="unit">%</span></div>
+              <div className="stat-label">Maintenance burden</div>
             </Reveal>
-          </div>
-        </div>
-
-        <div className="viz-wrap">
-          <Reveal><TechViz/></Reveal>
-        </div>
-
-        <div className="container">
-          <div className="stages">
-            {[
-              { n:"01", h:"Inlet",          p:"Untreated flow enters the active zone — particles suspended at random across the cross-section." },
-              { n:"02", h:"Standing wave",  p:"Piezo arrays generate a standing pressure field. No filters, no membranes, no contact with the medium." },
-              { n:"03", h:"Acoustic focus", p:"Radiation force concentrates particles into a narrow centerline stream toward the pressure nodes." },
-              { n:"04", h:"Capture",        p:"A downstream probe siphons the focused stream while bulk flow exits clean and uninterrupted." },
-            ].map((s, i) => (
-              <Reveal key={i} className="stage" delay={i*90}>
-                <span className="stage-n">{s.n}</span>
-                <div>
-                  <h4>{s.h}</h4>
-                  <p>{s.p}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SPECS ─── */}
-      <section id="specs" className="section">
-        <div className="container">
-          <div className="section-intro">
-            <Reveal>
-              <span className="label">03 — Specifications</span>
-              <h2 className="display">Built for the floor,<br/><em>not the bench.</em></h2>
+            <Reveal className="stat" delay={200}>
+              <div className="stat-num"><Counter to={120}/><span className="unit">m³/h</span></div>
+              <div className="stat-label">Continuous throughput</div>
             </Reveal>
-          </div>
-
-          <div className="specs-layout">
-            <Reveal className="specs-device">
-              <HeroDevice/>
-              <p className="specs-device-label">FLW-01 / Mk. 02 · Product render</p>
-            </Reveal>
-
-            <Reveal className="specs-table" delay={100}>
-              {SPECS.map((s, i) => (
-                <div key={i} className="spec-row">
-                  <span className="spec-k">{s.k}</span>
-                  <span className="spec-v">{s.v}<em> {s.u}</em></span>
-                </div>
-              ))}
+            <Reveal className="stat" delay={300}>
+              <div className="stat-num"><Counter to={1.6} decimals={1}/><span className="unit">MHz</span></div>
+              <div className="stat-label">Operating frequency</div>
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* ─── TEAM ─── */}
-      <section id="team" className="section team-section">
-        <div className="container">
-          <Reveal className="section-intro">
-            <span className="label">04 — The Team</span>
-            <h2 className="display">Engineers, founders,<br/><em>operators.</em></h2>
+      <section id="challenge" className="challenge sec">
+        <div className="fc">
+          <Reveal className="section-head">
+            <span className="eyebrow">The Challenge</span>
+            <h2 className="display">The threat is already <em>in your water.</em></h2>
+            <p>Particles in the 1–5&nbsp;mm range slip through conventional screens and clog fine filters. They migrate through pipework, accumulate in storage, and quietly degrade reuse loops over months.</p>
+          </Reveal>
+          <div className="problems">
+            <Reveal className="problem">
+              <div className="problem-img"><IconScreen/></div>
+              <div className="problem-num">P / 01</div>
+              <h3>Slipping through filters</h3>
+              <p>Conventional screens and WWTPs struggle in the 1–5&nbsp;mm range, leaving operators with persistent discharge risk.</p>
+            </Reveal>
+            <Reveal className="problem" delay={120}>
+              <div className="problem-img"><IconLoop/></div>
+              <div className="problem-num">P / 02</div>
+              <h3>Unreliable reuse quality</h3>
+              <p>Microplastics degrade recycled water loops, undermining process stability and compliance confidence.</p>
+            </Reveal>
+            <Reveal className="problem" delay={240}>
+              <div className="problem-img"><IconClog/></div>
+              <div className="problem-num">P / 03</div>
+              <h3>Clogging and downtime</h3>
+              <p>Fine meshes block fast under real-world loads — driving up maintenance, labor, and unplanned downtime.</p>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section id="tech" className="tech sec dark-section">
+        <div className="fc">
+          <Reveal className="section-head">
+            <span className="eyebrow">The Technology</span>
+            <h2 className="display">Standing waves. <em>No moving parts.</em></h2>
+            <p>Piezo arrays generate a precise pressure field. Acoustic radiation force pushes microplastics into focus nodes — concentrating them into a narrow capture stream while bulk flow passes clean.</p>
           </Reveal>
         </div>
-        <div className="team-grid">
-          {TEAM.map((m, i) => (
-            <Reveal key={i} className="member" delay={i*80}>
-              <div className="member-img-wrap">
-                <img src={m.img} alt={m.name}/>
-              </div>
-              <div className="member-info">
-                <span className="member-tag">{m.tag}</span>
-                <h4>{m.name}</h4>
-                <p>{m.role}</p>
-              </div>
+        <div className="tech-viz-wrap"><Reveal><TechViz/></Reveal></div>
+        <div className="tech-stages">
+          {[
+            { num:"STAGE 01", h:"Inlet", p:"Untreated flow enters the active zone with particles suspended at random across the cross-section." },
+            { num:"STAGE 02", h:"Standing wave", p:"Piezo arrays generate a pressure field. No filters, no membranes, no contact with the medium." },
+            { num:"STAGE 03", h:"Acoustic focus", p:"Radiation force concentrates particles into a narrow centerline stream toward the pressure nodes." },
+            { num:"STAGE 04", h:"Capture", p:"A downstream probe siphons the focused stream while bulk flow continues clean and uninterrupted." },
+          ].map((s, i) => (
+            <Reveal key={i} className="stage-card" delay={i * 100}>
+              <div className="stage-num">{s.num}</div>
+              <h4>{s.h}</h4>
+              <p>{s.p}</p>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* ─── SUSTAIN ─── */}
-      <section className="sustain">
-        <div className="container">
-          <Reveal className="sustain-inner">
-            <h3>We're <em>responsible.</em><br/>You can be too.</h3>
-            <div className="sdg-row">
-              {[
-                { n:"06", l:"Clean Water\n& Sanitation",     c:"#26BDE2" },
-                { n:"09", l:"Industry\n& Innovation",        c:"#FD6925" },
-                { n:"12", l:"Responsible\nConsumption",      c:"#BF8B2E" },
-                { n:"13", l:"Climate\nAction",               c:"#3F7E44" },
-              ].map(s => (
-                <div key={s.n} className="sdg" style={{ background: s.c }}>
-                  <div className="sdg-n">{s.n}</div>
-                  <div className="sdg-l">{s.l.split("\n").map((t,i) => <span key={i}>{t}</span>)}</div>
-                </div>
-              ))}
+      <section id="feat-1" className="feature alt">
+        <div className="fc">
+          <Reveal className="feature-row">
+            <div className="feature-content">
+              <span className="eyebrow">Designed for the floor</span>
+              <h2>Up to <em>50% less</em> maintenance.</h2>
+              <p>By avoiding ultra-fine meshes, the system reduces clogging cycles and cleaning frequency — slashing labor and unplanned downtime.</p>
+              <ul className="feature-bullets">
+                <li>No replaceable mesh elements</li>
+                <li>Self-clearing pressure-node design</li>
+                <li>Engineered for 24/7 continuous duty</li>
+              </ul>
+            </div>
+            <div className="feature-img">
+              <div className="feature-img-stripe"></div>
+              <div style={{textAlign:"center",position:"relative",zIndex:1}}>
+                <div style={{fontSize:96,fontWeight:600,letterSpacing:"-0.045em",color:"var(--navy-bright)",lineHeight:1}}>−50<span style={{fontSize:42,color:"var(--navy)",fontStyle:"italic",fontWeight:400}}>%</span></div>
+                <div style={{fontSize:14,color:"var(--mute)",marginTop:14,fontWeight:500,letterSpacing:"0.04em"}}>vs. fine-mesh filtration</div>
+              </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ─── SUPPORTED ─── */}
+      <section id="feat-2" className="feature dark dark-section">
+        <div className="fc">
+          <Reveal className="feature-row flip">
+            <div className="feature-content">
+              <span className="eyebrow">Built to be measured</span>
+              <h2>Auditable <em>by design.</em></h2>
+              <p>Before-and-after removal data supports permits and reuse programs with clear, defensible metrics for regulators and customers.</p>
+              <ul className="feature-bullets">
+                <li>Real-time particle counting at inlet and outlet</li>
+                <li>Automated capture logs with timestamping</li>
+                <li>Compliance-ready reporting exports</li>
+              </ul>
+            </div>
+            <div className="feature-img">
+              <div className="feature-img-stripe"></div>
+              <div style={{position:"relative",zIndex:1,width:"82%"}}>
+                <svg viewBox="0 0 400 240" style={{width:"100%"}}>
+                  <line x1="40" y1="200" x2="380" y2="200" stroke="rgba(255,255,255,0.2)"/>
+                  <line x1="40" y1="40" x2="40" y2="200" stroke="rgba(255,255,255,0.2)"/>
+                  {[0,1,2,3,4,5].map(i => (
+                    <line key={i} x1={40 + i*60} y1="200" x2={40 + i*60} y2="195" stroke="rgba(255,255,255,0.3)"/>
+                  ))}
+                  <path d="M 40 80 Q 100 60, 160 90 T 280 70 T 380 85"
+                    stroke="rgba(255,255,255,0.5)" strokeWidth="2" fill="none" strokeDasharray="3 4"/>
+                  <path d="M 40 80 Q 80 110, 120 140 T 200 175 T 380 190"
+                    stroke="#5A7FC8" strokeWidth="2.5" fill="none">
+                    <animate attributeName="stroke-dasharray" from="0 600" to="600 0" dur="2.5s" fill="freeze"/>
+                  </path>
+                  <text x="40" y="30" fill="rgba(255,255,255,0.5)" fontSize="11" fontFamily="ui-monospace, monospace">PARTICLES / L</text>
+                  <text x="290" y="60" fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="ui-monospace, monospace">— INLET</text>
+                  <text x="290" y="76" fill="#5A7FC8" fontSize="11" fontFamily="ui-monospace, monospace">— OUTLET</text>
+                </svg>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="specs" className="specs dark-section">
+        <div className="fc">
+          <Reveal className="section-head">
+            <span className="eyebrow">Technical specifications</span>
+            <h2 className="display">Built for the floor, <em>not the bench.</em></h2>
+            <p>FLW-01 Mk. 02 is engineered for continuous duty in industrial water systems.</p>
+          </Reveal>
+          <div className="specs-grid">
+            {[
+              { k:"Target band", v:"1 – 5", u:"mm", d:"Particle size range optimized for ultrasonic focusing." },
+              { k:"Throughput", v:"120", u:"m³/h", d:"Continuous flow capacity per single unit." },
+              { k:"Frequency", v:"1.6", u:"MHz", d:"Tuned for ideal node spacing in water medium." },
+              { k:"Pressure drop", v:"< 0.4", u:"bar", d:"Minimal hydraulic load on upstream systems." },
+              { k:"Footprint", v:"1.4 × 0.8", u:"m", d:"Skid-mounted, drops into existing process loops." },
+              { k:"Power draw", v:"2.1", u:"kW", d:"Energy-efficient compared to membrane systems." },
+            ].map((s, i) => (
+              <Reveal key={i} className="spec-card" delay={i * 80}>
+                <div className="spec-key">{s.k}</div>
+                <div className="spec-val">{s.v}<span className="unit">{s.u}</span></div>
+                <div className="spec-desc">{s.d}</div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="team" className="team sec">
+        <div className="fc">
+          <Reveal className="section-head">
+            <span className="eyebrow">The Team</span>
+            <h2 className="display">Engineers, founders, <em>operators.</em></h2>
+          </Reveal>
+          <div className="team-grid">
+            {TEAM.map((m, i) => (
+              <Reveal key={i} className="member" delay={i * 100}>
+                <div className="member-photo">
+                  <img src={m.img} alt={m.name}/>
+                  <span className="member-tag">{m.tag}</span>
+                </div>
+                <div className="member-info">
+                  <h4>{m.name}</h4>
+                  <p>{m.role}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sustain">
+        <div className="fc">
+          <Reveal className="sustain-row">
+            <h3>We're <em>responsible.</em><br/>You can be too.</h3>
+            <div className="sdg-row">
+              <div className="sdg sdg-6"><div className="sdg-num">06</div><div className="sdg-label">Clean Water<br/>& Sanitation</div></div>
+              <div className="sdg sdg-9"><div className="sdg-num">09</div><div className="sdg-label">Industry<br/>& Innovation</div></div>
+              <div className="sdg sdg-12"><div className="sdg-num">12</div><div className="sdg-label">Responsible<br/>Consumption</div></div>
+              <div className="sdg sdg-13"><div className="sdg-num">13</div><div className="sdg-label">Climate<br/>Action</div></div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       <section className="supported">
-        <div className="container supported-row">
-          <span className="label">Supported by</span>
-          <span className="imperial">
-            <span className="imperial-mark"/>
-            Imperial College London
-          </span>
-          <span className="label">Est. 2026 · London</span>
-        </div>
-      </section>
-
-      {/* ─── CONTACT ─── */}
-      <section id="contact" className="section dark contact-section">
-        <div className="container">
-          <div className="contact-grid">
-            <Reveal className="contact-left">
-              <span className="label">05 — Contact</span>
-              <h2 className="display">Let's get<br/><em>to work.</em></h2>
-              <p className="intro-body">
-                Pilot programs are now open for industrial water operators, sustainability teams, and reuse-system integrators.
-              </p>
-              <dl className="contact-info">
-                <div>
-                  <dt>Email</dt>
-                  <dd><a href="mailto:info@flowsonicfiltration.co.uk">info@flowsonicfiltration.co.uk</a></dd>
-                </div>
-                <div>
-                  <dt>Book a call</dt>
-                  <dd><a href="https://calendly.com/ritalkhoury7/30min" target="_blank" rel="noreferrer">30-min intro ↗</a></dd>
-                </div>
-                <div>
-                  <dt>Location</dt>
-                  <dd>Imperial College, South Kensington · London</dd>
-                </div>
-              </dl>
-            </Reveal>
-
-            <Reveal className="contact-right" delay={140}>
-              {done ? (
-                <p className="form-success">Thanks — we'll be in touch within 48&nbsp;hours.</p>
-              ) : (
-                <form onSubmit={(e: any) => { e.preventDefault(); setDone(true); }}>
-                  <div className="field">
-                    <label>Email *</label>
-                    <input type="email" required placeholder="you@company.com"/>
-                  </div>
-                  <div className="field">
-                    <label>Company</label>
-                    <input type="text" placeholder="Where you work"/>
-                  </div>
-                  <div className="field">
-                    <label>Message *</label>
-                    <textarea required placeholder="Tell us about your water system"/>
-                  </div>
-                  <button type="submit" className="btn-solid">Send message →</button>
-                </form>
-              )}
-            </Reveal>
+        <div className="fc">
+          <div className="supported-row">
+            <div className="supported-label">Supported by</div>
+            <div className="imperial">Imperial College London</div>
+            <div className="supported-label">Est. 2026 · London, UK</div>
           </div>
         </div>
       </section>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="footer">
-        <div className="container footer-inner">
-          <div className="footer-brand">
-            <img
-              src="Pictures%20%26%20Videos/Spring%20Term%20Logo.png"
-              alt="Flowsonic"
-              className="footer-logo"
-            />
+      <section id="cta" className="cta dark-section">
+        <div className="fc-narrow">
+          <Reveal>
+            <h2>Let's <em>get to work.</em></h2>
+            <p className="cta-lede">Pilot programs are now opening for industrial water operators, sustainability teams, and reuse-system integrators.</p>
+            {submitted ? (
+              <div className="cta-success">Thanks — we'll be in touch within 48 hours.</div>
+            ) : (
+              <form className="cta-form" onSubmit={(e: any) => { e.preventDefault(); setSubmitted(true); }}>
+                <div className="cta-row">
+                  <input type="email" required placeholder="you@company.com"/>
+                  <input type="text" placeholder="Company"/>
+                </div>
+                <textarea required placeholder="Tell us about your water system"></textarea>
+                <button type="submit" className="cta-submit">Send message <span>→</span></button>
+              </form>
+            )}
+          </Reveal>
+        </div>
+      </section>
+
+      <footer className="foot">
+        <div className="fc">
+          <div className="foot-mark">
+            <span className="foot-mark-icon"><LogoMark size={56} white/></span>
+            <div className="foot-mark-text">
+              <strong>Flowsonic</strong>
+              <span>The magnet for microplastics</span>
+            </div>
           </div>
-          <div className="footer-meta">
-            <span>© 2026 Flowsonic Filtration Ltd</span>
-            <span>info@flowsonicfiltration.co.uk</span>
-            <span>FLW-01 · Mk. 02 · London</span>
+          <div className="foot-row">
+            <div>© 2026 Flowsonic Filtration Ltd</div>
+            <div>info@flowsonicfiltration.co.uk</div>
+            <div>FLW-01 · Mk. 02 · London / UK</div>
           </div>
         </div>
       </footer>
     </>
   );
 };
-
-/* ─ inline device SVG ─ */
-function HeroDevice() {
-  return (
-    <svg viewBox="0 0 1400 580" style={{ width:"100%", height:"auto", display:"block" }}>
-      <defs>
-        <linearGradient id="hbg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0"   stopColor="#E6EDF8"/>
-          <stop offset=".42" stopColor="#FFFFFF"/>
-          <stop offset=".6"  stopColor="#F2F5FC"/>
-          <stop offset="1"   stopColor="#96A4BC"/>
-        </linearGradient>
-        <linearGradient id="hcl" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#2C5CAA"/><stop offset=".5" stopColor="#1C3868"/><stop offset="1" stopColor="#0A1424"/>
-        </linearGradient>
-        <linearGradient id="hcr" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2450A0"/><stop offset=".5" stopColor="#183060"/><stop offset="1" stopColor="#0A1424"/>
-        </linearGradient>
-        <linearGradient id="hpipe" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#8898B0"/><stop offset=".4" stopColor="#9EACBF"/><stop offset="1" stopColor="#545E70"/>
-        </linearGradient>
-        <linearGradient id="hstrip" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#142450"/><stop offset=".5" stopColor="#284C96"/><stop offset="1" stopColor="#142450"/>
-        </linearGradient>
-        <radialGradient id="hglow" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="rgba(100,132,200,.4)"/><stop offset="1" stopColor="rgba(100,132,200,0)"/>
-        </radialGradient>
-        <radialGradient id="hshadow" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="rgba(0,0,0,.5)"/><stop offset="1" stopColor="rgba(0,0,0,0)"/>
-        </radialGradient>
-        <filter id="hdrp"><feDropShadow dx="0" dy="12" stdDeviation="24" floodColor="rgba(0,0,0,.4)"/></filter>
-      </defs>
-
-      <ellipse cx="700" cy="544" rx="520" ry="18" fill="url(#hshadow)" opacity=".55"/>
-      <ellipse cx="700" cy="498" rx="420" ry="88" fill="url(#hglow)" opacity=".5"/>
-
-      <rect x="18" y="296" width="220" height="58" rx="5" fill="url(#hpipe)" filter="url(#hdrp)"/>
-      <rect x="18" y="296" width="220" height="14" rx="5" fill="rgba(255,255,255,.2)"/>
-      <rect x="222" y="280" width="24" height="90" rx="2" fill="#364256"/>
-      <rect x="222" y="280" width="8"  height="90" rx="1" fill="rgba(255,255,255,.08)"/>
-
-      <rect x="246" y="162" width="908" height="322" rx="26" fill="url(#hbg)" filter="url(#hdrp)"/>
-      <rect x="246" y="162" width="908" height="66"  rx="26" fill="rgba(255,255,255,.4)"/>
-      <rect x="246" y="162" width="13"  height="322" fill="rgba(0,0,0,.04)"/>
-      <rect x="1141" y="162" width="13" height="322" fill="rgba(0,0,0,.04)"/>
-
-      <rect x="316" y="146" width="768" height="26" rx="3" fill="url(#hstrip)"/>
-      <rect x="316" y="146" width="768" height="8"  rx="3" fill="rgba(255,255,255,.1)"/>
-      {[428,546,664,782,900,1018].map((x,i) => (
-        <g key={x}>
-          <rect x={x-24} y="149" width="48" height="19" rx="2" fill="rgba(42,78,152,.6)" stroke="rgba(86,120,188,.4)" strokeWidth=".5"/>
-          <circle cx={x} cy="158" r="3.5" fill="#7090D8" opacity=".6">
-            <animate attributeName="opacity" values=".2;.9;.2" dur="2.4s" repeatCount="indefinite" begin={`${i*.28}s`}/>
-          </circle>
-        </g>
-      ))}
-
-      <rect x="316" y="498" width="768" height="26" rx="3" fill="url(#hstrip)"/>
-      {[428,546,664,782,900,1018].map((x,i) => (
-        <g key={x}>
-          <rect x={x-24} y="501" width="48" height="19" rx="2" fill="rgba(42,78,152,.6)" stroke="rgba(86,120,188,.4)" strokeWidth=".5"/>
-          <circle cx={x} cy="510" r="3.5" fill="#7090D8" opacity=".6">
-            <animate attributeName="opacity" values=".9;.2;.9" dur="2.4s" repeatCount="indefinite" begin={`${i*.28}s`}/>
-          </circle>
-        </g>
-      ))}
-
-      <ellipse cx="246" cy="323" rx="38" ry="163" fill="url(#hcl)"/>
-      <ellipse cx="246" cy="323" rx="20" ry="94"  fill="rgba(100,132,200,.16)"/>
-      <ellipse cx="1154" cy="323" rx="38" ry="163" fill="url(#hcr)"/>
-      <ellipse cx="1154" cy="323" rx="20" ry="94"  fill="rgba(100,132,200,.14)"/>
-
-      <rect x="790" y="232" width="296" height="102" rx="9" fill="#050C1A" stroke="rgba(86,120,188,.2)" strokeWidth="1"/>
-      <rect x="800" y="242" width="276" height="82"  rx="5" fill="#030810"/>
-      <text x="814" y="264" fontFamily="ui-monospace,monospace" fontSize="10.5" fill="rgba(86,120,188,.9)"  letterSpacing="1.6">FLW-01 / ACTIVE</text>
-      <line x1="814" y1="271" x2="1068" y2="271" stroke="rgba(86,120,188,.16)" strokeWidth=".5"/>
-      <text x="814" y="287" fontFamily="ui-monospace,monospace" fontSize="10"   fill="rgba(255,255,255,.5)"  letterSpacing="1.2">1.6 MHz · 120 m³/h</text>
-      <text x="814" y="303" fontFamily="ui-monospace,monospace" fontSize="10"   fill="rgba(86,120,188,.7)"   letterSpacing="1.2">CAPTURE 92%</text>
-      <text x="814" y="318" fontFamily="ui-monospace,monospace" fontSize="9.5"  fill="rgba(255,255,255,.25)" letterSpacing="1">Mk. 02 · 2026</text>
-      <circle cx="1072" cy="259" r="3" fill="#44C068" opacity=".9">
-        <animate attributeName="opacity" values=".3;1;.3" dur="1.6s" repeatCount="indefinite"/>
-      </circle>
-
-      <text x="318" y="410" fontFamily="Inter,sans-serif" fontSize="22" fontWeight="600" fill="#1C3868" letterSpacing="3.5" opacity=".85">FLOWSONIC</text>
-      <text x="318" y="428" fontFamily="Inter,sans-serif" fontSize="8.5" fill="#8A8E9B" letterSpacing="3.2">THE MAGNET FOR MICROPLASTICS · Mk. 02</text>
-
-      <rect x="1162" y="296" width="220" height="58" rx="5" fill="url(#hpipe)" filter="url(#hdrp)"/>
-      <rect x="1162" y="296" width="220" height="14" rx="5" fill="rgba(255,255,255,.2)"/>
-      <rect x="1158" y="280" width="24" height="90" rx="2" fill="#364256"/>
-      <rect x="1174" y="280" width="8"  height="90" rx="1" fill="rgba(255,255,255,.08)"/>
-
-      {Array.from({length:14},(_,i) => (
-        <circle key={i} r={i%3===0?2.8:1.9} cy={323+(i%5-2)*24}
-          fill={i>8?"#5A7AC0":"rgba(255,255,255,.8)"}>
-          <animate attributeName="cx" from="40" to="1360"
-            dur={`${2.5+(i%4)*.45}s`} begin={`${i*.2}s`} repeatCount="indefinite"/>
-          <animate attributeName="opacity" values="0;.9;.9;.8;0"
-            keyTimes="0;.07;.45;.92;1"
-            dur={`${2.5+(i%4)*.45}s`} begin={`${i*.2}s`} repeatCount="indefinite"/>
-          {i>8&&<animate attributeName="cy"
-            values={`${323+(i%5-2)*24};${323+(i%5-2)*12};323;323`}
-            keyTimes="0;.32;.5;1"
-            dur={`${2.5+(i%4)*.45}s`} begin={`${i*.2}s`} repeatCount="indefinite"/>}
-        </circle>
-      ))}
-
-      <rect x="662" y="488" width="76" height="68" rx="3" fill="#263244" stroke="rgba(86,120,188,.25)" strokeWidth="1"/>
-      <rect x="672" y="550" width="56" height="14" rx="2" fill="#1C3868"/>
-    </svg>
-  );
-}
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
