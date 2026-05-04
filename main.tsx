@@ -1,3 +1,6 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
 interface RevealProps {
   children: any;
   className?: string;
@@ -7,7 +10,7 @@ interface RevealProps {
 // Brand mark — uses the actual logo PNG (transparent navy / transparent white versions).
 const LogoMark = ({ size = 32, white = false }: { size?: number; white?: boolean }) => (
   <img
-    src={white ? "assets/logo-icon-white.png" : "assets/logo-icon.png"}
+    src={white ? "/logo-icon-white.png" : "/logo-icon.png"}
     alt="Flowsonic"
     width={size}
     height={size}
@@ -306,10 +309,10 @@ const IconClog = () => (
 );
 
 const TEAM = [
-  { img: "assets/team-1.jpg", name: "Emil Huseynli", role: "Petroleum Engineer · Founder, Former CEO Agroficient", tag: "FOUNDER" },
-  { img: "assets/team-2.jpg", name: "Rita Khoury", role: "Environmental & Chemical Engineer", tag: "ENGINEERING" },
-  { img: "assets/team-4.jpg", name: "Kevin Huang", role: "Design Engineer", tag: "ENGINEERING" },
-  { img: "assets/team-3.jpg", name: "Yihang Zhang", role: "Architect", tag: "DESIGN" },
+  { img: "/team-1.jpg", name: "Emil Huseynli", role: "Petroleum Engineer · Founder, Former CEO Agroficient", tag: "FOUNDER" },
+  { img: "/team-2.jpg", name: "Rita Khoury", role: "Environmental & Chemical Engineer", tag: "ENGINEERING" },
+  { img: "/team-4.jpg", name: "Kevin Huang", role: "Design Engineer", tag: "ENGINEERING" },
+  { img: "/team-3.jpg", name: "Yihang Zhang", role: "Architect", tag: "DESIGN" },
 ];
 
 const App = () => {
@@ -639,4 +642,4 @@ const App = () => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
