@@ -172,24 +172,36 @@ const HeroDevice = () => (
   </svg>
 );
 
-// Tech viz — particles converging into focus nodes
+// Tech viz — particles converging into two focus nodes at 1/4 and 3/4 pipe height
 const TechViz = () => {
+  // Pipe: y=130 to y=370 (height=240), center y=250
+  // Node at 1/4 height: y=190 (offset -60 from center)
+  // Node at 3/4 height: y=310 (offset +60 from center)
   const particles = React.useMemo(() =>
-    Array.from({length: 80}, (_, i) => ({
-      id: i,
-      delay: (i * 0.12) % 5,
-      yStart: ((i * 41) % 200) - 100,
-      size: 1.5 + ((i * 7) % 4) / 2,
-      speed: 5 + (i % 3),
-    })), []
+    Array.from({length: 80}, (_, i) => {
+      const rawY = ((i * 41) % 200) - 100; // -100 to +99 from center
+      const nodeOffset = rawY < 0 ? -60 : 60; // top node or bottom node
+      return {
+        id: i,
+        delay: (i * 0.12) % 5,
+        yStart: rawY,
+        nodeOffset,
+        size: 1.5 + ((i * 7) % 4) / 2,
+        speed: 5 + (i % 3),
+      };
+    }), []
   );
 
   return (
     <div className="tech-viz-frame">
       <svg viewBox="0 0 1400 500" preserveAspectRatio="none" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
+        {/* Pipe body */}
         <rect x="0" y="130" width="1400" height="240" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
-        <line x1="0" y1="250" x2="1400" y2="250" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 8"/>
+        {/* Node guide lines at 1/4 and 3/4 pipe height */}
+        <line x1="0" y1="190" x2="1400" y2="190" stroke="rgba(90,127,200,0.18)" strokeDasharray="4 8"/>
+        <line x1="0" y1="310" x2="1400" y2="310" stroke="rgba(90,127,200,0.18)" strokeDasharray="4 8"/>
 
+        {/* Transducer blocks */}
         {[400, 600, 800, 1000].map(x => (
           <g key={x}>
             <rect x={x-32} y="70" width="64" height="60" fill="rgba(46,84,160,0.1)" stroke="rgba(90,127,200,0.45)" strokeWidth="1" rx="4"/>
@@ -199,31 +211,44 @@ const TechViz = () => {
           </g>
         ))}
 
+        {/* Acoustic field waves at top node (y=190) and bottom node (y=310) */}
         <g stroke="#5A7FC8" fill="none" opacity="0.55">
           {[0,1,2].map(i => (
-            <path key={i} strokeWidth={1.4 - i*0.3} opacity={0.7 - i*0.18}
-              d={`M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5}`}>
+            <path key={`t${i}`} strokeWidth={1.4 - i*0.3} opacity={0.7 - i*0.18}
+              d={`M 350 ${190+i*3} Q 400 ${165+i*3}, 450 ${190+i*3} T 550 ${190+i*3} T 650 ${190+i*3} T 750 ${190+i*3} T 850 ${190+i*3} T 950 ${190+i*3} T 1050 ${190+i*3}`}>
               <animate attributeName="d"
-                values={`M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5};
-                        M 350 ${250+i*5} Q 400 ${280+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5};
-                        M 350 ${250+i*5} Q 400 ${220+i*5}, 450 ${250+i*5} T 550 ${250+i*5} T 650 ${250+i*5} T 750 ${250+i*5} T 850 ${250+i*5} T 950 ${250+i*5} T 1050 ${250+i*5}`}
+                values={`M 350 ${190+i*3} Q 400 ${165+i*3}, 450 ${190+i*3} T 550 ${190+i*3} T 650 ${190+i*3} T 750 ${190+i*3} T 850 ${190+i*3} T 950 ${190+i*3} T 1050 ${190+i*3};
+                        M 350 ${190+i*3} Q 400 ${215+i*3}, 450 ${190+i*3} T 550 ${190+i*3} T 650 ${190+i*3} T 750 ${190+i*3} T 850 ${190+i*3} T 950 ${190+i*3} T 1050 ${190+i*3};
+                        M 350 ${190+i*3} Q 400 ${165+i*3}, 450 ${190+i*3} T 550 ${190+i*3} T 650 ${190+i*3} T 750 ${190+i*3} T 850 ${190+i*3} T 950 ${190+i*3} T 1050 ${190+i*3}`}
+                dur="3.5s" repeatCount="indefinite"/>
+            </path>
+          ))}
+          {[0,1,2].map(i => (
+            <path key={`b${i}`} strokeWidth={1.4 - i*0.3} opacity={0.7 - i*0.18}
+              d={`M 350 ${310+i*3} Q 400 ${285+i*3}, 450 ${310+i*3} T 550 ${310+i*3} T 650 ${310+i*3} T 750 ${310+i*3} T 850 ${310+i*3} T 950 ${310+i*3} T 1050 ${310+i*3}`}>
+              <animate attributeName="d"
+                values={`M 350 ${310+i*3} Q 400 ${285+i*3}, 450 ${310+i*3} T 550 ${310+i*3} T 650 ${310+i*3} T 750 ${310+i*3} T 850 ${310+i*3} T 950 ${310+i*3} T 1050 ${310+i*3};
+                        M 350 ${310+i*3} Q 400 ${335+i*3}, 450 ${310+i*3} T 550 ${310+i*3} T 650 ${310+i*3} T 750 ${310+i*3} T 850 ${310+i*3} T 950 ${310+i*3} T 1050 ${310+i*3};
+                        M 350 ${310+i*3} Q 400 ${285+i*3}, 450 ${310+i*3} T 550 ${310+i*3} T 650 ${310+i*3} T 750 ${310+i*3} T 850 ${310+i*3} T 950 ${310+i*3} T 1050 ${310+i*3}`}
                 dur="3.5s" repeatCount="indefinite"/>
             </path>
           ))}
         </g>
 
+        {/* Particles: random entry, converge to top or bottom node in active zone, stay there */}
+        {/* cx: -20→1420 total=1440; active zone x=400-1000 → keyTimes ~0.29 to ~0.71 */}
         {particles.map((p: any) => (
           <circle key={p.id} r={p.size} fill="rgba(255,255,255,0.85)">
             <animate attributeName="cx" from={-20} to={1420} dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite"/>
             <animate attributeName="cy"
-              values={`${250 + p.yStart}; ${250 + p.yStart * 0.95}; ${250 + p.yStart * 0.4}; ${250}; ${250}; ${250 + p.yStart * 0.4}; ${250 + p.yStart * 0.95}; ${250 + p.yStart}`}
-              keyTimes="0; 0.18; 0.32; 0.45; 0.6; 0.74; 0.88; 1"
+              values={`${250 + p.yStart}; ${250 + p.yStart}; ${250 + p.yStart * 0.5 + p.nodeOffset * 0.5}; ${250 + p.nodeOffset}; ${250 + p.nodeOffset}`}
+              keyTimes="0; 0.28; 0.50; 0.70; 1"
               dur={`${p.speed}s`}
               begin={`${p.delay}s`}
               repeatCount="indefinite"/>
             <animate attributeName="fill"
-              values="rgba(255,255,255,0.85); rgba(255,255,255,0.85); #5A7FC8; #5A7FC8; #5A7FC8; rgba(255,255,255,0.85)"
-              keyTimes="0; 0.32; 0.45; 0.6; 0.74; 1"
+              values="rgba(255,255,255,0.85); rgba(255,255,255,0.85); #5A7FC8; #5A7FC8; #5A7FC8"
+              keyTimes="0; 0.28; 0.50; 0.70; 1"
               dur={`${p.speed}s`}
               begin={`${p.delay}s`}
               repeatCount="indefinite"/>
@@ -231,7 +256,7 @@ const TechViz = () => {
         ))}
 
         <text x="40" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FLOW →</text>
-        <text x="1280" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1.4">FOCUSED</text>
+        <text x="1240" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1.4">FOCUSED ×2</text>
         <text x="40" y="480" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FIG. 02 · ULTRASONIC FOCUSING — 1.6 MHZ</text>
       </svg>
     </div>
