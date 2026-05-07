@@ -602,11 +602,6 @@ const App = () => {
 
       <section id="cta" className="cta dark-section">
         <div className="fc-narrow">
-          To achieve that centered, stacked layout, we’ll use a bit of CSS styling (Flexbox) directly in the code. This will ensure the "CONTACT DETAILS" header, the emails, and the button all sit on their own lines and stay perfectly centered.
-
-          Here is the updated code to replace everything inside your <Reveal> tag:
-
-            JavaScript
             <Reveal>
               <h2>Let's <em>get to work.</em></h2>
               <p className="cta-lede">
