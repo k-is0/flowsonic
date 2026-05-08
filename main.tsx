@@ -197,7 +197,7 @@ const TechViz = () => {
 
   return (
     <div className="tech-viz-frame">
-      <svg viewBox="0 0 1400 500" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+      <svg viewBox="0 0 1400 500" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
         {/* Pipe body */}
         <rect x="0" y="130" width="1400" height="240" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
         {/* Node guide lines at 1/4 and 3/4 pipe height */}

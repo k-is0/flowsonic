@@ -35,7 +35,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: var(--sans);
   background: var(--bg);
@@ -1122,6 +1122,7 @@ em, .display em, .hero-headline em, .feature-content h2 em, .section-head h2 em,
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1024px) {
+  .fc, .fc-narrow, .fc-wide { padding: 0 24px; }
   .problems { grid-template-columns: 1fr; }
   .problem { border-right: none; }
   .team-grid, .specs-grid, .tech-stages { grid-template-columns: repeat(2, 1fr); }
@@ -1132,13 +1133,60 @@ em, .display em, .hero-headline em, .feature-content h2 em, .section-head h2 em,
   .feature-row.flip > div:first-child { order: 0; }
   .sustain-row { grid-template-columns: 1fr; gap: 50px; }
   .nav-links { display: none; }
+  .tech-viz-frame { height: 380px; }
+  .feature { padding: 100px 0; }
 }
+
 @media (max-width: 640px) {
+  /* Containers */
+  .fc, .fc-narrow, .fc-wide { padding: 0 16px; }
+
+  /* Grids */
   .team-grid, .specs-grid, .tech-stages, .stats-grid { grid-template-columns: 1fr; }
-  .stat { border-right: none; padding: 32px 0; border-bottom: 1px solid var(--rule); }
+
+  /* Stats */
+  .stat { border-right: none; padding: 28px 0; border-bottom: 1px solid var(--rule); }
   .stat:last-child { border-bottom: none; }
-  .sec, .specs, .cta { padding: 110px 0; }
+  .stat-num { font-size: clamp(44px, 12vw, 72px); }
+  .stats { padding: 64px 0; }
+
+  /* Sections */
+  .sec, .specs, .cta { padding: 80px 0; }
+  .feature { padding: 72px 0; }
+  .sustain { padding: 72px 0; }
+  .section-head { margin-bottom: 52px; }
+
+  /* Hero */
+  .hero { padding-top: 88px; }
+  .hero-content { padding: 0; }
+  .hero-sub { font-size: 17px; max-width: 100%; }
+  .hero-ctas { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 48px; }
+  .hero-ctas .btn { justify-content: center; }
+  .hero-stage { min-height: 240px; }
+  .hero-product { width: 100%; }
+
+  /* Nav — shrink CTA so it doesn't overflow on small phones */
+  .nav-cta { font-size: 12px; padding: 8px 12px; letter-spacing: 0.06em; }
+  .nav-logo-text { font-size: 18px; }
+
+  /* Tech viz — match frame height to a sensible ratio so the SVG isn't squished */
+  .tech-viz-frame { height: 220px; }
+  .tech-viz-wrap { padding: 0; margin: 36px auto 40px; }
+  .tech-stages { padding: 0 16px; }
+  .stage-card { padding: 24px 16px; }
+
+  /* Specs */
+  .spec-val { font-size: 38px; }
+
+  /* SDG — 2×2 on mobile */
+  .sdg-row { grid-template-columns: repeat(2, 1fr); }
+
+  /* CTA form */
   .cta-row { grid-template-columns: 1fr; }
   .cta-row input:first-child { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); padding-right: 4px; }
   .cta-row input:last-child { padding-left: 4px; }
+
+  /* Footer */
+  .foot-row { flex-direction: column; gap: 8px; }
+  .foot { padding: 50px 0 28px; }
 }
