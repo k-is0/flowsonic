@@ -134,8 +134,8 @@ const HeroDevice = () => (
     <rect x="800" y="280" width="280" height="80" rx="10" fill="#0A1628" />
     <rect x="810" y="290" width="260" height="60" rx="6" fill="#050B17" stroke="rgba(90,127,200,0.3)" strokeWidth="1" />
     <text x="820" y="310" fontFamily="ui-monospace, monospace" fontSize="11" fill="#5A7FC8" letterSpacing="1">FLW-01 / ACTIVE</text>
-    <text x="820" y="328" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.6)" letterSpacing="1">1.6 MHz · 120 m³/h</text>
-    <text x="820" y="345" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1">CAPTURE 92%</text>
+    <text x="820" y="328" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.6)" letterSpacing="1">100 kHz · 120 m³/h</text>
+    <text x="820" y="345" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1">CAPTURE 60–70%</text>
 
     {/* Brand mark + name */}
     <text x="320" y="460" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="700" fill="#1E3A6B" letterSpacing="2">FLOWSONIC</text>
@@ -260,7 +260,7 @@ const TechViz = () => {
 
         <text x="40" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FLOW →</text>
         <text x="1240" y="40" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(90,127,200,0.7)" letterSpacing="1.4">FOCUSED ×2</text>
-        <text x="40" y="480" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FIG. 02 · ULTRASONIC FOCUSING — 1.6 MHZ</text>
+        <text x="40" y="480" fontFamily="ui-monospace, monospace" fontSize="11" fill="rgba(255,255,255,0.5)" letterSpacing="1.4">FIG. 02 · ULTRASONIC FOCUSING — 100 KHZ</text>
       </svg>
     </div>
   );
@@ -308,6 +308,125 @@ const IconClog = () => (
   </svg>
 );
 
+const CostChart = () => {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [on, setOn] = React.useState<boolean>(false);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([e]: IntersectionObserverEntry[]) => {
+      if (e.isIntersecting) { setOn(true); obs.disconnect(); }
+    }, { threshold: 0.2 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  // Fills parent absolutely; tall viewBox so bars use full height
+  const cBot = 440, cH = 380;
+  const s = (v: number) => cH * (v / 4);
+  const h1 = s(3.64), h2 = s(1.50);
+  const bracketMid = (cBot - h1 + cBot - h2) / 2;
+
+  return (
+    <div ref={ref} style={{ position: "absolute", inset: 0 }}>
+      <svg viewBox="0 0 480 510" style={{ width: "100%", height: "100%" }}>
+        {/* Grid lines + Y axis labels */}
+        {[0, 1, 2, 3, 4].map(v => {
+          const y = cBot - s(v);
+          return (
+            <g key={v}>
+              <line x1="48" y1={y} x2="440" y2={y} stroke="rgba(26,31,46,0.08)" strokeDasharray={v > 0 ? "3 6" : undefined} />
+              <text x="42" y={y + 4} textAnchor="end" fontSize="10" fontFamily="'JetBrains Mono', monospace" fill="#8A8E9B">£{v}</text>
+            </g>
+          );
+        })}
+
+        {/* Bar 1 ghost */}
+        <rect x="72" y={cBot - h1} width="130" height={h1} fill="#4A5161" opacity="0.07" />
+        {on ? (
+          <rect x="72" y={cBot} width="130" height="0" fill="#4A5161">
+            <animate attributeName="height" from="0" to={h1} dur="1.1s" fill="freeze" calcMode="spline" keySplines="0.22 1 0.36 1" />
+            <animate attributeName="y" from={cBot} to={cBot - h1} dur="1.1s" fill="freeze" calcMode="spline" keySplines="0.22 1 0.36 1" />
+          </rect>
+        ) : <rect x="72" y={cBot} width="130" height="0" fill="#4A5161" />}
+
+        {/* Bar 2 ghost */}
+        <rect x="278" y={cBot - h2} width="130" height={h2} fill="#1E3A6B" opacity="0.07" />
+        {on ? (
+          <rect x="278" y={cBot} width="130" height="0" fill="#1E3A6B">
+            <animate attributeName="height" from="0" to={h2} dur="1.1s" fill="freeze" begin="0.18s" calcMode="spline" keySplines="0.22 1 0.36 1" />
+            <animate attributeName="y" from={cBot} to={cBot - h2} dur="1.1s" fill="freeze" begin="0.18s" calcMode="spline" keySplines="0.22 1 0.36 1" />
+          </rect>
+        ) : <rect x="278" y={cBot} width="130" height="0" fill="#1E3A6B" />}
+
+        {/* Value labels centred inside bars — white, no collision */}
+        <g opacity={on ? 1 : 0} style={{ transition: "opacity 0.4s ease 1s" }}>
+          <text x="137" y={cBot - h1 / 2 + 10} textAnchor="middle" fontSize="26" fontFamily="'Newsreader', serif" fill="white">£3.64</text>
+          <text x="137" y={cBot - h1 / 2 + 26} textAnchor="middle" fontSize="10" fontFamily="'JetBrains Mono', monospace" fill="rgba(255,255,255,0.55)" letterSpacing="1">PER M³</text>
+        </g>
+        <g opacity={on ? 1 : 0} style={{ transition: "opacity 0.4s ease 1.15s" }}>
+          <text x="343" y={cBot - h2 / 2 + 10} textAnchor="middle" fontSize="26" fontFamily="'Newsreader', serif" fill="white">£1.50</text>
+          <text x="343" y={cBot - h2 / 2 + 26} textAnchor="middle" fontSize="10" fontFamily="'JetBrains Mono', monospace" fill="rgba(255,255,255,0.65)" letterSpacing="1">PER M³</text>
+        </g>
+
+        {/* Saving bracket */}
+        <g opacity={on ? 0.82 : 0} style={{ transition: "opacity 0.4s ease 1.35s" }}>
+          <line x1="222" y1={cBot - h1} x2="222" y2={cBot - h2} stroke="#1E3A6B" strokeWidth="1.5" />
+          <line x1="215" y1={cBot - h1} x2="222" y2={cBot - h1} stroke="#1E3A6B" strokeWidth="1.5" />
+          <line x1="215" y1={cBot - h2} x2="222" y2={cBot - h2} stroke="#1E3A6B" strokeWidth="1.5" />
+          <text x="230" y={bracketMid + 2} fontSize="11" fontFamily="'JetBrains Mono', monospace" fill="#1E3A6B" letterSpacing="0.4">−£2.14/m³</text>
+          <text x="230" y={bracketMid + 17} fontSize="10" fontFamily="'JetBrains Mono', monospace" fill="rgba(30,58,107,0.6)" letterSpacing="0.4">per m³ saved</text>
+        </g>
+
+        {/* Axis labels */}
+        <text x="137" y={cBot + 22} textAnchor="middle" fontSize="9" fontFamily="'JetBrains Mono', monospace" fill="#8A8E9B" letterSpacing="1">UNTREATED</text>
+        <text x="343" y={cBot + 22} textAnchor="middle" fontSize="9" fontFamily="'JetBrains Mono', monospace" fill="#1E3A6B" letterSpacing="1">WITH FLOWSONIC</text>
+        <line x1="48" y1={cBot + 34} x2="440" y2={cBot + 34} stroke="rgba(26,31,46,0.08)" />
+        <text x="244" y={cBot + 50} textAnchor="middle" fontSize="9" fontFamily="'JetBrains Mono', monospace" fill="#8A8E9B" letterSpacing="0.6">SOURCE: THAMES WATER · MOGDEN FORMULA TARIFF</text>
+      </svg>
+    </div>
+  );
+};
+
+const EnergyBars = () => {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [on, setOn] = React.useState<boolean>(false);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([e]: IntersectionObserverEntry[]) => {
+      if (e.isIntersecting) { setOn(true); obs.disconnect(); }
+    }, { threshold: 0.2 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="energy-bars">
+      {[
+        { label: "RO Membrane", sublabel: "Industry benchmark", val: "1.5", unit: "kWh/m³", pct: "100%", cls: "alt" },
+        { label: "FlowSonic", sublabel: "This device", val: "0.5", unit: "kWh/m³", pct: "33.3%", cls: "primary", delay: "0.18s" },
+      ].map((b, i) => (
+        <div key={i} className="energy-bar-row">
+          <div className="energy-bar-meta">
+            <div>
+              <span className={`energy-bar-name ${b.cls === "primary" ? "energy-bar-name-primary" : ""}`}>{b.label}</span>
+              <span className="energy-bar-sublabel">{b.sublabel}</span>
+            </div>
+            <span className={`energy-bar-val ${b.cls === "primary" ? "energy-bar-val-primary" : ""}`}>
+              {b.val} <em>{b.unit}</em>
+            </span>
+          </div>
+          <div className="energy-track">
+            <div
+              className={`energy-fill energy-fill-${b.cls}`}
+              style={{ width: on ? b.pct : "0%", transitionDelay: b.delay || "0s" }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const TEAM = [
   { img: "/team-1.jpg", name: "Emil Huseynli", role: "Petroleum Engineer · Founder, Former CEO Agroficient", tag: "FOUNDER" },
   { img: "/team-2.jpg", name: "Rita Khoury", role: "Environmental & Chemical Engineer", tag: "ENGINEERING" },
@@ -327,7 +446,7 @@ const App = () => {
   }, []);
 
   React.useEffect(() => {
-    const ids = ["hero", "challenge", "tech", "feat-1", "feat-2", "specs", "team", "cta"];
+    const ids = ["hero", "challenge", "business", "tech", "feat-1", "feat-2", "specs", "team", "cta"];
     const obs = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
       entries.forEach(e => {
         if (e.isIntersecting) setSection((e.target as HTMLElement).id);
@@ -353,6 +472,7 @@ const App = () => {
           </a>
           <ul className="nav-links">
             <li><a href="#challenge">Challenge</a></li>
+            <li><a href="#business">Business</a></li>
             <li><a href="#tech">Technology</a></li>
             <li><a href="#feat-1">Benefits</a></li>
             <li><a href="#specs">Specs</a></li>
@@ -391,8 +511,8 @@ const App = () => {
         <div className="fc">
           <div className="stats-grid">
             <Reveal className="stat">
-              <div className="stat-num"><Counter to={92} /><span className="unit">%</span></div>
-              <div className="stat-label">Capture in target band</div>
+              <div className="stat-num"><Counter to={60} /><span className="unit">–70%</span></div>
+              <div className="stat-label">Target removal efficiency</div>
             </Reveal>
             <Reveal className="stat" delay={100}>
               <div className="stat-num">−<Counter to={50} /><span className="unit">%</span></div>
@@ -403,7 +523,7 @@ const App = () => {
               <div className="stat-label">Continuous throughput</div>
             </Reveal>
             <Reveal className="stat" delay={300}>
-              <div className="stat-num"><Counter to={1.6} decimals={1} /><span className="unit">MHz</span></div>
+              <div className="stat-num"><Counter to={100} /><span className="unit">kHz</span></div>
               <div className="stat-label">Operating frequency</div>
             </Reveal>
           </div>
@@ -434,9 +554,79 @@ const App = () => {
               <div className="problem-img"><IconClog /></div>
               <div className="problem-num">P / 03</div>
               <h3>Clogging and downtime</h3>
-              <p>Fine meshes block fast under real-world loads — driving up maintenance, labor, and unplanned downtime.</p>
+              <p>Fine meshes block fast under real-world loads, driving up maintenance, labor, and unplanned downtime.</p>
             </Reveal>
           </div>
+        </div>
+      </section>
+
+      <section id="business" className="business sec">
+        <div className="fc">
+          <Reveal className="section-head">
+            <span className="eyebrow">The Business Case</span>
+            <h2 className="display">The cost of doing nothing<br />is already <em>on your P&L.</em></h2>
+            <p>Under the UK Mogden Formula and EU Directive 2024/3019, untreated microplastic discharge carries compounding financial and regulatory exposure for every year of inaction.</p>
+          </Reveal>
+
+          <div className="biz-stat-band">
+            {[
+              { pre: "£", to: 65, suf: "k", label: "annual discharge cost\nat 50 m³/day · untreated" },
+              { pre: "£", to: 39, suf: "k", label: "estimated annual saving\nwith FlowSonic installed" },
+              { pre: "", to: 80, suf: "%", label: "treatment cost liability\nEU Directive 2024/3019" },
+              { pre: "", to: 3.2, dec: 1 as number | undefined, suf: " t", label: "CO₂e avoided per year\nper factory" },
+            ].map((s, i) => (
+              <Reveal key={i} className="biz-kpi" delay={i * 80}>
+                <div className="biz-kpi-num">{s.pre}<Counter to={s.to} decimals={s.dec} />{s.suf}</div>
+                <div className="biz-kpi-label">{s.label}</div>
+              </Reveal>
+            ))}
+          </div>
+
+          <div className="biz-main-grid">
+            <Reveal className="biz-card biz-chart-card">
+              <div className="biz-card-eyebrow">Discharge cost per m³</div>
+              <div className="biz-chart-wrap">
+                <CostChart />
+              </div>
+            </Reveal>
+
+            <div className="biz-side-col">
+              <Reveal className="biz-card biz-reg-card" delay={120}>
+                <div className="biz-reg-badge">EU · Directive 2024/3019</div>
+                <h3>Regulatory <em>exposure</em></h3>
+                <p>Under the Polluter Pays Principle, industries must fund up to <strong>80%</strong> of advanced wastewater treatment costs if microplastics enter municipal systems — a direct liability on your balance sheet.</p>
+                <ul className="biz-reg-list">
+                  <li>Applies to textile discharge entering sewers</li>
+                  <li>Costs borne by the polluting party, not utilities</li>
+                  <li>UK post-equivalent legislation in progress</li>
+                </ul>
+              </Reveal>
+
+              <Reveal className="biz-card biz-esg-card" delay={200}>
+                <div className="biz-card-eyebrow">ESG &amp; Certification Pressure</div>
+                <ul className="biz-esg-list">
+                  <li><span className="biz-esg-icon">01</span>ESG ratings increasingly penalise uncontrolled microplastic discharge</li>
+                  <li><span className="biz-esg-icon">02</span>Corporate sustainability goals require measurable, verified data</li>
+                  <li><span className="biz-esg-icon">03</span>Supply chain buyers and retailers demand environmental compliance</li>
+                </ul>
+              </Reveal>
+            </div>
+          </div>
+
+          <Reveal className="biz-energy-card">
+            <div className="biz-energy-head">
+              <div>
+                <div className="biz-card-eyebrow">Energy intensity · kWh per m³ treated</div>
+                <p className="biz-energy-sub">FlowSonic uses 3× less energy than industrial reverse osmosis</p>
+              </div>
+              <div className="biz-energy-saving">
+                <div className="biz-energy-saving-num">18.2</div>
+                <div className="biz-energy-saving-label">MWh saved / year<br />per factory</div>
+              </div>
+            </div>
+            <EnergyBars />
+            <div className="biz-card-foot">Conservative industrial scaling at 50 m³/day · 2.08 m³/h average flow. UK 2025 grid factor: 0.177 kgCO₂e/kWh. FlowSonic: ~0.5 kWh/m³ · RO benchmark: ~1.5 kWh/m³.</div>
+          </Reveal>
         </div>
       </section>
 
@@ -538,10 +728,10 @@ const App = () => {
             {[
               { k: "Target band", v: "1 – 5", u: "mm", d: "Particle size range optimized for ultrasonic focusing." },
               { k: "Throughput", v: "120", u: "m³/h", d: "Continuous flow capacity per single unit." },
-              { k: "Frequency", v: "up-to 500", u: "kHz", d: "Tuned for ideal node spacing in water medium." },
+              { k: "Frequency", v: "100", u: "kHz", d: "Tuned for ideal node spacing in water medium." },
               { k: "Pressure drop", v: "< 0.4", u: "bar", d: "Minimal hydraulic load on upstream systems." },
               { k: "Footprint", v: "1.4 × 0.8", u: "m", d: "Skid-mounted, drops into existing process loops." },
-              { k: "Power draw", v: "2.1", u: "kW", d: "Energy-efficient compared to membrane systems." },
+              { k: "Power draw", v: "1.04", u: "kW", d: "~0.5 kWh/m³ 3× more efficient than RO membrane systems." },
             ].map((s, i) => (
               <Reveal key={i} className="spec-card" delay={i * 80}>
                 <div className="spec-key">{s.k}</div>
@@ -594,7 +784,7 @@ const App = () => {
         <div className="fc">
           <div className="supported-row">
             <div className="supported-label">Supported by</div>
-            <div className="imperial">Imperial College London</div>
+            <img src="/assets/Imperial Logo.png" alt="Imperial College London" className="imperial-logo" />
             <div className="supported-label">Est. 2026 · London, UK</div>
           </div>
         </div>
@@ -602,19 +792,25 @@ const App = () => {
 
       <section id="cta" className="cta dark-section">
         <div className="fc-narrow">
-            <Reveal>
-              <h2>Let's <em>get to work.</em></h2>
-              <p className="cta-lede">
-                Pilot programs are now opening for industrial water operators, sustainability...
-              </p>
+          <Reveal>
+            <h2>Let's <em>get to work.</em></h2>
+            <p className="cta-lede">
+              Pilot programs are now opening for industrial water operators and sustainability-led textile manufacturers ready to take control of their discharge.
+            </p>
 
-              <div className="cta-contact-container">
-                <p className="cta-details">
-                  <strong>Contact Details:</strong> info@flowsonic.co.uk | flowsonic-ND@groups.imperial.ac.uk
-                </p>
+            <div className="cta-channels">
+              <div className="cta-channel">
+                <div className="cta-channel-label">General Enquiries</div>
+                <a href="mailto:flowsonic-ND@groups.imperial.ac.uk" className="cta-channel-email">flowsonic-ND@groups.imperial.ac.uk</a>
+              </div>
+              <div className="cta-channel-rule" />
+              <div className="cta-channel">
+                <div className="cta-channel-label">Schedule a Call</div>
+                <p className="cta-channel-desc">30-minute introduction — discuss your site, flow rates, and how FlowSonic fits your process.</p>
                 <a href="https://calendly.com/ritalkhoury7/30min" className="btn btn-primary">Request a call <span className="arr">→</span></a>
               </div>
-            </Reveal>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -629,7 +825,7 @@ const App = () => {
           </div>
           <div className="foot-row">
             <div>© 2026 Flowsonic Ltd</div>
-            <div>info@flowsonic.co.uk</div>
+            <div>flowsonic-ND@groups.imperial.ac.uk</div>
             <div>London / UK</div>
           </div>
         </div>
