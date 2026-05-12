@@ -784,7 +784,7 @@ const App = () => {
         <div className="fc">
           <div className="supported-row">
             <div className="supported-label">Supported by</div>
-            <img src="/assets/Imperial Logo.png" alt="Imperial College London" className="imperial-logo" />
+            <img src="/imperial-logo.png" alt="Imperial College London" className="imperial-logo" />
             <div className="supported-label">Est. 2026 · London, UK</div>
           </div>
         </div>
